@@ -6,4 +6,16 @@ int main(int argc, char *argv[]) {
   printf("%p\n", db);
   printf("%ld\n", db->capacity);
   printf("%ld\n", db->count);
+
+  int pif = kv_put(db, "key", "value");
+  printf("Success %d\n", pif);
+  printf("Count %ld\n", db->count);
+
+  pif = kv_put(db, "key", "value");
+  printf("Success %d\n", pif);
+  printf("Count %ld\n", db->count);
+
+  pif = kv_put(db, "paf", "value");
+  printf("Success %d\n", pif);
+  printf("Count %ld\n", db->count);
 }
