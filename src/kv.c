@@ -2,6 +2,7 @@
 #include <string.h>
 
 #define SEED 0x12a3e21a
+#define TOMBSTONE (void*)0x1
 
 kv_t *kv_init(size_t capacity) {
   kv_entry_t *entries = calloc(sizeof(kv_entry_t), capacity);
@@ -40,11 +41,11 @@ int kv_put(kv_t *db, char *key, char *value) {
     size_t db_index = (index + offset) % db->capacity;
     kv_entry_t *entry = &db->entries[db_index];
 
-    if (entry->key != NULL && strcmp(entry->key, key) != 0) {
+    if (entry->key != NULL && entry->key != TOMBSTONE && strcmp(entry->key, key) != 0) {
       continue;
     }
 
-    if (entry->key == NULL) {
+    if (entry->key == NULL || entry->key == TOMBSTONE) {
       db->count++;
     } else {
       free(entry->key);
@@ -82,7 +83,7 @@ char *kv_get(kv_t *db, char *key) {
       return NULL;
     }
 
-    if (strcmp(entry->key, key) != 0) {
+    if (entry->key == TOMBSTONE || strcmp(entry->key, key) != 0) {
       continue;
     }
 
@@ -90,4 +91,35 @@ char *kv_get(kv_t *db, char *key) {
   }
 
   return NULL;
+}
+
+// Returns 0 on success, -1 on error
+int kv_delete(kv_t *db, char *key) {
+  if (db == NULL || key == NULL) {
+    return -1;
+  }
+
+  size_t index = hash(key, db->capacity);
+
+  for (size_t offset = 0; offset < db->capacity; offset++) {
+    size_t db_index = (index + offset) % db->capacity;
+    kv_entry_t *entry = &db->entries[db_index];
+
+    if (entry->key == NULL) {
+      return -1;
+    }
+
+    if (entry->key == TOMBSTONE || strcmp(entry->key, key) != 0) {
+      continue;
+    }
+
+    free(entry->key);
+    free(entry->value);
+
+    entry->key = TOMBSTONE;
+    db->count--;
+    return 0;
+  }
+
+  return -1;
 }
