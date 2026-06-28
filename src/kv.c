@@ -2,12 +2,20 @@
 #include <string.h>
 
 #define SEED 0x12a3e21a
-#define TOMBSTONE (void*)0x1
+#define TOMBSTONE (char*)0x1
 
 kv_t *kv_init(size_t capacity) {
-  kv_entry_t *entries = calloc(sizeof(kv_entry_t), capacity);
+  kv_entry_t *entries = calloc(capacity, sizeof(kv_entry_t));
+  if (entries == NULL) {
+    return NULL;
+  }
 
   kv_t *store = malloc(sizeof(kv_t));
+  if (store == NULL) {
+    free(entries);
+    return NULL;
+  }
+
   store->count = 0;
   store->capacity = capacity;
   store->entries = entries;
@@ -15,15 +23,15 @@ kv_t *kv_init(size_t capacity) {
   return store;
 }
 
-size_t hash(const char *value, size_t capacity) {
+size_t hash(const char *key, size_t capacity) {
   size_t hash = SEED;
 
-  while (*value) {
-    hash ^= *value;
+  while (*key) {
+    hash ^= *key;
     hash = hash << 8;
-    hash += *value;
+    hash += *key;
 
-    value++;
+    key++;
   }
 
   return hash % capacity;
@@ -45,19 +53,19 @@ int kv_put(kv_t *db, char *key, char *value) {
       continue;
     }
 
-    if (entry->key == NULL || entry->key == TOMBSTONE) {
-      db->count++;
-    } else {
-      free(entry->key);
-      free(entry->value);
-    }
-
     char *key_copy = strdup(key);
     char *value_copy = strdup(value);
     if (key_copy == NULL || value_copy == NULL) {
       free(key_copy);
       free(value_copy);
       return -3;
+    }
+
+    if (entry->key == NULL || entry->key == TOMBSTONE) {
+      db->count++;
+    } else {
+      free(entry->key);
+      free(entry->value);
     }
 
     entry->key = key_copy;
@@ -117,6 +125,7 @@ int kv_delete(kv_t *db, char *key) {
     free(entry->value);
 
     entry->key = TOMBSTONE;
+    entry->value = NULL;
     db->count--;
     return 0;
   }
