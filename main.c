@@ -11,11 +11,14 @@ int main(int argc, char *argv[]) {
   printf("Success %d\n", pif);
   printf("Count %ld\n", db->count);
 
-  pif = kv_put(db, "key", "value");
+  pif = kv_put(db, "key", "value2");
   printf("Success %d\n", pif);
   printf("Count %ld\n", db->count);
 
   pif = kv_put(db, "paf", "value");
   printf("Success %d\n", pif);
   printf("Count %ld\n", db->count);
+
+  char *read = kv_get(db, "key");
+  printf("Value read %s\n", read);
 }
